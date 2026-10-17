@@ -142,6 +142,13 @@ input[type=color]{width:38px;height:28px;border:1px solid var(--line);padding:0;
 #home .tpls{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 #home[hidden],#app[hidden]{display:none}
 html{-webkit-text-size-adjust:100%}
+.sub{font-size:14px;margin:18px 0 2px}
+.skrow{display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;margin-top:10px}
+.skrow input[type=text]{grid-column:1/-1;margin:0}
+.lv{display:flex;align-items:center;gap:8px;margin:0}
+.lv input{flex:1;min-width:0;height:28px;accent-color:var(--btn)}
+.lv b{min-width:32px;color:var(--ink);font-size:13px}
+.nolv .lv,.nolv .lvhint{display:none}
 .gx{opacity:.5}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .tabs{display:none}
@@ -238,8 +245,13 @@ main{display:block;padding:0}
   </div>
   <div class="panel">
    <h2>Compétences et langues</h2>
-   <label>Compétences (séparées par des virgules ; niveau facultatif, ex. Excel:4)<textarea data-k="skills"></textarea></label>
-   <label>Langues (niveau facultatif sur 5, ex. Anglais:4)<textarea data-k="langs"></textarea></label>
+   <h3 class="sub">Compétences</h3>
+   <p class="note lvhint">Réglez le niveau avec le curseur : il s’affiche dans la barre du modèle.</p>
+   <div id="sk"></div>
+   <button class="ghost" id="addSk" style="margin-top:8px">Ajouter une compétence</button>
+   <h3 class="sub">Langues</h3>
+   <div id="lg"></div>
+   <button class="ghost" id="addLg" style="margin-top:8px">Ajouter une langue</button>
    <label>Centres d’intérêt (séparés par des virgules)<textarea data-k="ints"></textarea></label>
    <button class="ghost" id="reset" style="margin-top:14px">Effacer et recommencer</button>
    <p class="note">Votre saisie est enregistrée automatiquement sur cet appareil, dans ce navigateur uniquement.</p>
@@ -301,18 +313,23 @@ function tint(h,t){var n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;func
 var tt;function thumbsLater(){clearTimeout(tt);tt=setTimeout(thumbs,250)}
 var SAMPLE={d:{name:'Camille Moreau',title:'Chargée de communication',email:'camille.moreau@exemple.fr',phone:'06 12 34 56 78',city:'Libreville',summary:'Cinq ans d’expérience en communication digitale. J’aime transformer des idées complexes en messages simples.',skills:'Rédaction:5, Réseaux sociaux:4, Canva:4, Gestion de projet:3',langs:'Français:5, Anglais:4',ints:'Lecture, Randonnée, Photographie'},
 exp:[{role:'Chargée de communication',company:'Agence Horizon',period:'2021 – aujourd’hui',desc:'Gestion de 12 comptes clients\nHausse de 40 % de l’audience en un an'}],
-edu:[{degree:'Master Communication',school:'Université Omar Bongo',period:'2018 – 2020'}]};
+edu:[{degree:'Master Communication',school:'Université Omar Bongo',period:'2018 – 2020'}],
+sk:[{n:'Rédaction',v:5},{n:'Réseaux sociaux',v:4},{n:'Canva',v:4},{n:'Gestion de projet',v:3}],lg:[{n:'Français',v:5},{n:'Anglais',v:4}]};
 var SA={d:SAMPLE.d,exp:SAMPLE.exp,edu:SAMPLE.edu};
-var blank=function(){return{tpl:'classique',accent:'#0f5c55',d:{name:'',title:'',email:'',phone:'',city:'',summary:'',skills:'',langs:'',ints:''},exp:[{role:'',company:'',period:'',desc:''}],edu:[{degree:'',school:'',period:''}]}};
+var blank=function(){return{tpl:'classique',accent:'#0f5c55',d:{name:'',title:'',email:'',phone:'',city:'',summary:'',skills:'',langs:'',ints:''},exp:[{role:'',company:'',period:'',desc:''}],edu:[{degree:'',school:'',period:''}],sk:[{n:'',v:3}],lg:[{n:'',v:3}]}};
+function ser(a){return(a||[]).filter(function(x){return String(x.n).trim()}).map(function(x){return String(x.n).replace(/[,:]/g,' ').trim()+':'+x.v}).join(', ')}
 var GHOST=true,CUR=null,M='\u0001';
 function eff(){
  var u=S.d,d={};
  Object.keys(SAMPLE.d).forEach(function(k){d[k]=u[k]||(GHOST?M+SAMPLE.d[k]:'')});
+ d.skills=ser(S.sk)||(GHOST?M+SAMPLE.d.skills:'');d.langs=ser(S.lg)||(GHOST?M+SAMPLE.d.langs:'');
  function rows(a,sm,ks){return a.map(function(e,i){var q=sm[Math.min(i,sm.length-1)],o={};ks.forEach(function(k){o[k]=e[k]||(GHOST?M+q[k]:'')});return o})}
  return{d:d,exp:rows(S.exp,SAMPLE.exp,['role','company','period','desc']),edu:rows(S.edu,SAMPLE.edu,['degree','school','period'])};
 }
 var S=blank(),saved=false;
 try{var raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);saved=true}}catch(e){}
+function fromStr(t){var r=String(t||'').split(',').map(function(x){var q=x.split(':');return{n:q[0].trim(),v:Math.min(5,Math.max(1,+q[1]||3))}}).filter(function(x){return x.n});return r.length?r:[{n:'',v:3}]}
+if(!S.sk)S.sk=fromStr(S.d.skills);if(!S.lg)S.lg=fromStr(S.d.langs);
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function esc(s){s=String(s||'');var g=s.charAt(0)===M;if(g)s=s.slice(1);s=s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]});return g?'<span class="gx">'+s+'</span>':s}
 function list(s){return listL(s).map(function(x){return x.replace(/:\s*[1-5]$/,'')})}
@@ -348,6 +365,7 @@ function build(tpl,src){
 }
 function render(){
  var cv=document.getElementById('cv');
+ document.getElementById('form').classList.toggle('nolv',!(T[S.tpl]&&(T[S.tpl].k==='b'||T[S.tpl].k==='d')));
  cv.className='cvx t-'+S.tpl+(T[S.tpl]?' g':'');cv.style.setProperty('--a',S.accent);
  cv.innerHTML=build(S.tpl);fit();thumbsLater();
 }
@@ -384,7 +402,10 @@ function itemHtml(kind,i,o){
  if(kind==='exp')s+='<label>Missions (une par ligne)<textarea data-l="exp" data-i="'+i+'" data-f="desc" placeholder="'+esc(sp.desc)+'">'+esc(o.desc)+'</textarea></label>';
  return s+'<button class="ghost" data-del="'+kind+'" data-i="'+i+'">Supprimer</button></div>';
 }
+function rowSk(k,i,o){var sm=SAMPLE[k],v=+o.v||3;sm=sm[Math.min(i,sm.length-1)];
+ return'<div class="skrow"><input type="text" data-l="'+k+'" data-i="'+i+'" data-f="n" value="'+esc(o.n)+'" placeholder="'+esc(sm.n)+'" aria-label="Nom"><label class="lv">Niveau<input type="range" min="1" max="5" step="1" data-l="'+k+'" data-i="'+i+'" data-f="v" value="'+v+'"><b>'+v+'/5</b></label><button class="ghost" data-del="'+k+'" data-i="'+i+'" aria-label="Supprimer">✕</button></div>'}
 function lists(){
+ ['sk','lg'].forEach(function(k){document.getElementById(k).innerHTML=S[k].map(function(o,i){return rowSk(k,i,o)}).join('')});
  document.getElementById('exp').innerHTML=S.exp.map(function(o,i){return itemHtml('exp',i,o)}).join('');
  document.getElementById('edu').innerHTML=S.edu.map(function(o,i){return itemHtml('edu',i,o)}).join('');
 }
@@ -400,7 +421,7 @@ function tplBtns(){
 document.addEventListener('input',function(e){
  var el=e.target;
  if(el.dataset.k){S.d[el.dataset.k]=el.value}
- else if(el.dataset.l){S[el.dataset.l][+el.dataset.i][el.dataset.f]=el.value}
+ else if(el.dataset.l){var rg=el.type==='range';S[el.dataset.l][+el.dataset.i][el.dataset.f]=rg?+el.value:el.value;if(rg&&el.nextElementSibling)el.nextElementSibling.textContent=el.value+'/5'}
  else if(el.id==='accent'){S.accent=el.value}
  else return;
  GHOST=true;save();render();
@@ -411,7 +432,9 @@ document.addEventListener('click',function(e){
  else if(b.dataset.del){S[b.dataset.del].splice(+b.dataset.i,1);lists();save();render()}
  else if(b.id==='addExp'){S.exp.push({role:'',company:'',period:'',desc:''});lists();save();render()}
  else if(b.id==='addEdu'){S.edu.push({degree:'',school:'',period:''});lists();save();render()}
- else if(b.id==='reset'){if(confirm('Effacer toutes vos informations ?')){var t=S.tpl,a=S.accent;S={tpl:t,accent:a,d:{name:'',title:'',email:'',phone:'',city:'',summary:'',skills:'',langs:'',ints:''},exp:[{role:'',company:'',period:'',desc:''}],edu:[{degree:'',school:'',period:''}]};fill();save();render()}}
+ else if(b.id==='addSk'){S.sk.push({n:'',v:3});lists();save();render()}
+ else if(b.id==='addLg'){S.lg.push({n:'',v:3});lists();save();render()}
+ else if(b.id==='reset'){if(confirm('Effacer toutes vos informations ?')){var t=S.tpl,a=S.accent;S={tpl:t,accent:a,d:{name:'',title:'',email:'',phone:'',city:'',summary:'',skills:'',langs:'',ints:''},exp:[{role:'',company:'',period:'',desc:''}],edu:[{degree:'',school:'',period:''}],sk:[{n:'',v:3}],lg:[{n:'',v:3}]};fill();save();render()}}
  else if(b.id==='pdf'){dl(b)}
  else if(b.id==='prt'){GHOST=false;render();window.print()}
  else if(b.id==='back'){show('home')}
