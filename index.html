@@ -164,7 +164,7 @@ main{display:block;padding:0}
   <ol class="steps">
    <li><b>Choisissez un modèle</b><span>Cliquez sur celui qui vous plaît : l’aperçu montre le rendu réel.</span></li>
    <li><b>Remplissez le formulaire</b><span>Le CV se met à jour en direct. La taille du texte s’adapte pour tout tenir sur une page ; une deuxième page n’apparaît que si c’est nécessaire.</span></li>
-   <li><b>Téléchargez en PDF</b><span>Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF ».</span></li>
+   <li><b>Téléchargez en PDF</b><span>Un clic sur « Télécharger en PDF » et le fichier est créé directement, sans fenêtre d’impression.</span></li>
   </ol>
   <p class="priv">Vos données restent dans votre navigateur : rien n’est envoyé ni enregistré sur un serveur.</p>
   <div id="resume"></div>
@@ -176,6 +176,7 @@ main{display:block;padding:0}
 <header class="top">
  <div><h1>Créateur de CV</h1><p>Tout reste dans votre navigateur : aucune donnée n’est envoyée.</p></div>
  <button class="ghost" id="back">← Changer de modèle</button>
+ <button class="ghost" id="prt">Imprimer</button>
  <button class="primary" id="pdf">Télécharger en PDF</button>
 </header>
 <main>
@@ -219,11 +220,13 @@ main{display:block;padding:0}
  <div id="stage">
   <div id="fit"><div id="cv" class="cvx"></div></div>
   <p class="note hint" id="stat"></p>
-  <p class="note hint">Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF » et désactivez les en-têtes et pieds de page.</p>
+  <p class="note hint">« Télécharger en PDF » crée directement un PDF fidèle à l’aperçu (page en image). « Imprimer » donne un PDF avec texte sélectionnable, utile pour les logiciels de tri de CV : choisissez « Enregistrer au format PDF » et désactivez les en-têtes et pieds de page.</p>
   <details class="note hint"><summary>Crédits open source</summary><p class="note">« Cadres » : mise en page adaptée de resume-template, © 2023 Paul Ndaboreheye, licence MIT (github.com/intetsu2/resume-template). « Portfolio » : style inspiré de Start Bootstrap Resume, © 2013-2023 Start Bootstrap LLC, licence MIT (github.com/StartBootstrap/startbootstrap-resume).</p></details>
  </div>
 </main>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (function(){
 var KEY='cv-builder-v1';
@@ -264,8 +267,9 @@ function gen(t){
  var N='<div class="gn"><h1>'+esc(d.name)+'</h1><div class="gt">'+esc(d.title)+'</div>'+(g.hp&&d.summary?'<p>'+esc(d.summary)+'</p>':'')+'</div>';
  var H='<div class="gh hb-'+(g.hb||'w')+'">'+(g.ph==='head'?P:'')+N+(g.hc?'<div class="gc">'+ct+'</div>':'')+'</div>';
  var sd=g.L?'<aside class="gs" style="width:'+g.sw+'px">'+(g.ph==='side'?P:'')+(g.h==='side'?N:'')+secs(g.S||'')+'</aside>':'';
- return'<div class="gw L'+(g.L||'')+' hs-'+g.hs+' sb-'+(g.sb||'n')+(g.f==='s'?' ff':'')+'" style="--sbg:'+(g.sc||'color-mix(in srgb,var(--a) 16%,#fff)')+'">'+(g.h==='band'?H:'')+'<div class="gb">'+sd+'<div class="gm">'+(g.h==='main'?H:'')+secs(g.M||'')+'</div></div></div>';
+ return'<div class="gw L'+(g.L||'')+' hs-'+g.hs+' sb-'+(g.sb||'n')+(g.f==='s'?' ff':'')+'" style="--sbg:'+(g.sc||tint(t===S.tpl?S.accent:g.a,.16))+'">'+(g.h==='band'?H:'')+'<div class="gb">'+sd+'<div class="gm">'+(g.h==='main'?H:'')+secs(g.M||'')+'</div></div></div>';
 }
+function tint(h,t){var n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;function m(c){return Math.round(c+(255-c)*(1-t))}return'rgb('+m(r)+','+m(g)+','+m(b)+')'}
 var tt;function thumbsLater(){clearTimeout(tt);tt=setTimeout(thumbs,250)}
 var blank=function(){return{tpl:'classique',accent:'#0f5c55',d:{name:'Camille Moreau',title:'Chargée de communication',email:'camille.moreau@exemple.fr',phone:'06 12 34 56 78',city:'Libreville',summary:'Cinq ans d’expérience en communication digitale. J’aime transformer des idées complexes en messages simples.',skills:'Rédaction:5, Réseaux sociaux:4, Canva:4, Gestion de projet:3',langs:'Français:5, Anglais:4',ints:'Lecture, Randonnée, Photographie'},
 exp:[{role:'Chargée de communication',company:'Agence Horizon',period:'2021 – aujourd’hui',desc:'Gestion de 12 comptes clients\nHausse de 40 % de l’audience en un an'}],
@@ -316,7 +320,7 @@ function thumbs(){
   el.style.transform='scale('+sc+')';w.style.height=(1123*sc)+'px';
  });
 }
-var KMIN=8/0.75/13;
+var KMIN=8/0.75/13,LAY={pages:1,ph:1123};
 function fit(){
  if(document.getElementById('app').hidden)return;
  var box=document.getElementById('fit'),cv=document.getElementById('cv');
@@ -328,7 +332,7 @@ function fit(){
   if(fits(KMIN)){var lo=KMIN,hi=1;for(var i=0;i<14;i++){var m=(lo+hi)/2;if(fits(m))lo=m;else hi=m}k=lo;fits(k)}
   else{k=KMIN;fits(k);PH=1030;pages=Math.ceil(cv.scrollHeight/PH);cv.style.setProperty('--ph',PH+'px');cv.style.setProperty('--phmm','273mm')}
  }
- cv.style.setProperty('--pages',pages);
+ cv.style.setProperty('--pages',pages);LAY={pages:pages,ph:PH};
  for(var j=1;j<pages;j++){var d=document.createElement('div');d.className='pb';d.style.top=(j*PH)+'px';cv.appendChild(d)}
  document.getElementById('pgs').textContent=pages>1?'@page{size:A4;margin:12mm 0}':'';
  cv.style.zoom=Math.min(1,(box.clientWidth-28)/794);
@@ -370,7 +374,8 @@ document.addEventListener('click',function(e){
  else if(b.id==='addExp'){S.exp.push({role:'',company:'',period:'',desc:''});lists();save();render()}
  else if(b.id==='addEdu'){S.edu.push({degree:'',school:'',period:''});lists();save();render()}
  else if(b.id==='reset'){if(confirm('Effacer toutes vos informations ?')){var t=S.tpl,a=S.accent;S={tpl:t,accent:a,d:{name:'',title:'',email:'',phone:'',city:'',summary:'',skills:'',langs:'',ints:''},exp:[{role:'',company:'',period:'',desc:''}],edu:[{degree:'',school:'',period:''}]};fill();save();render()}}
- else if(b.id==='pdf'){window.print()}
+ else if(b.id==='pdf'){dl(b)}
+ else if(b.id==='prt'){window.print()}
  else if(b.id==='back'){show('home')}
  else if(b.id==='resumeBtn'){show('app')}
  else if(b.id==='rmph'){S.photo='';document.getElementById('photo').value='';save();render()}
@@ -383,6 +388,45 @@ document.addEventListener('change',function(e){
   S.photo=c.toDataURL('image/jpeg',.85);save();render()};im.src=r.result};r.readAsDataURL(f);
 });
 window.addEventListener('resize',fit);
+async function makePdf(){
+ var cv=document.getElementById('cv'),w=document.createElement('div'),c2=cv.cloneNode(true),cnv,st=[0],multi=LAY.pages>1,H=multi?LAY.ph:1123;
+ w.style.cssText='position:fixed;left:-10000px;top:0;width:794px';
+ c2.style.zoom=1;c2.querySelectorAll('.pb').forEach(function(n){n.remove()});
+ w.appendChild(c2);document.body.appendChild(w);
+ try{
+  var t0=c2.getBoundingClientRect().top,tot=c2.getBoundingClientRect().height,rs=[];
+  c2.querySelectorAll('li,p,h3,.sk,.m,.gt,h1,.gsec>div,.e>b').forEach(function(n){var r=n.getBoundingClientRect();if(r.height)rs.push([r.top-t0,r.bottom-t0])});
+  tot=Math.max.apply(null,rs.map(function(r){return r[1]}).concat([0]));
+  while(multi&&st[st.length-1]+H<tot-1){
+   var hi=st[st.length-1]+H,found=0;
+   rs.forEach(function(r){var y=r[1];if(y<=hi&&y>hi-H*0.25&&y>found&&!rs.some(function(q){return q[0]<y-0.5&&q[1]>y+0.5}))found=y});
+   st.push(found||hi);
+  }
+  cnv=await html2canvas(c2,{scale:2,backgroundColor:'#fff',useCORS:true});
+ }finally{w.remove()}
+ var pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),sc=cnv.width/794;
+ st.forEach(function(y0,i){
+  var y1=i+1<st.length?st[i+1]:cnv.height/sc,sy=Math.round(y0*sc),sh=Math.max(1,Math.min(Math.round((y1-y0)*sc),cnv.height-sy)),c=document.createElement('canvas');
+  c.width=cnv.width;c.height=sh;c.getContext('2d').drawImage(cnv,0,sy,cnv.width,sh,0,0,cnv.width,sh);
+  if(i)pdf.addPage();
+  pdf.addImage(c.toDataURL('image/jpeg',.92),'JPEG',0,multi?12:0,210,sh/sc*210/794);
+ });
+ return pdf.output('blob');
+}
+async function dl(btn){
+ var st=document.getElementById('stat'),t=btn.textContent;
+ btn.disabled=true;btn.textContent='Création du PDF…';
+ try{
+  if(!window.html2canvas||!window.jspdf)throw{code:'lib'};
+  var blob=await makePdf(),f='CV-'+((S.d.name||'').trim().replace(/\s+/g,'-').replace(/[^\w\u00C0-\u00FF-]/g,'')||'mon-cv')+'.pdf';
+  var dc=(window.claude&&window.claude.use)?await window.claude.use('downloads'):null;
+  if(dc){await dc.save({filename:f,data:blob})}
+  else{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},4000)}
+ }catch(e){
+  if(!e||e.code!=='declined')st.textContent='Le téléchargement direct a échoué. Utilisez « Imprimer » puis « Enregistrer au format PDF ».';
+ }
+ btn.disabled=false;btn.textContent=t;
+}
 function show(v){
  document.getElementById('home').hidden=v!=='home';document.getElementById('app').hidden=v!=='app';
  window.scrollTo(0,0);
