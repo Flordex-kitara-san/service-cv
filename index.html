@@ -19,8 +19,8 @@ button{font:inherit;cursor:pointer}
 .primary{background:var(--btn);color:var(--btnt);border:0;border-radius:6px;padding:9px 16px;font-weight:600}
 .ghost{background:none;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:13px}
 .primary:focus-visible,.ghost:focus-visible,input:focus-visible,textarea:focus-visible,.tpl:focus-visible{outline:2px solid var(--btn);outline-offset:2px}
-main{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:20px;padding:20px;align-items:start}
-@media(max-width:860px){main{grid-template-columns:1fr}}
+main{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);gap:20px;padding:20px;align-items:start}
+@media(max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
 .panel h2{font:600 16px/1.3 Georgia,serif;margin:0 0 10px}
 .panel+.panel{margin-top:14px}
@@ -141,13 +141,38 @@ input[type=color]{width:38px;height:28px;border:1px solid var(--line);padding:0;
 #resume{margin-top:16px}
 #home .tpls{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 #home[hidden],#app[hidden]{display:none}
+html{-webkit-text-size-adjust:100%}
+.gx{opacity:.5}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.tabs{display:none}
+@media screen and (max-width:860px){
+header.top{padding:10px 12px;gap:8px}
+header.top h1{font-size:17px}
+header.top p{display:none}
+.acts{width:100%}.acts .primary{flex:1}
+.ghost,.primary{min-height:40px}
+.tabs{display:flex;position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:none;border:0;border-bottom:3px solid transparent;color:var(--mute);padding:12px 0;font-weight:600}
+.tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--btn)}
+main{padding:12px;gap:12px}
+.panel{padding:12px}
+input[type=text],input[type=email],input[type=tel],textarea{font-size:16px}
+#stage{position:static}
+#app.v-form #stage{height:0;overflow:hidden;margin:0}
+#app.v-prev #form{display:none}
+#fit{padding:8px}
+#home{padding:20px 14px 40px}
+.hw h1{font-size:24px}
+.lead{font-size:16px}
+}
+@media screen and (max-width:420px){.g2{grid-template-columns:1fr}.tpls,#home .tpls{grid-template-columns:repeat(2,1fr)}}
 @media print{
 @page{size:A4;margin:0}
 .pb{display:none!important}
 .cvx .e,.cvx .r{break-inside:avoid}
 .cvx h3{break-after:avoid}
 body{background:#fff}
-header.top,.panel,.note,#stage .hint{display:none!important}
+header.top,.tabs,.panel,.note,#stage .hint{display:none!important}
 main{display:block;padding:0}
 #stage{position:static}
 #fit{background:none;padding:0;border-radius:0;height:auto!important}
@@ -172,13 +197,16 @@ main{display:block;padding:0}
   <div class="tpls" id="tpls"></div>
  </div>
 </section>
-<div id="app" hidden>
+<div id="app" class="v-form" hidden>
 <header class="top">
  <div><h1>Créateur de CV</h1><p>Tout reste dans votre navigateur : aucune donnée n’est envoyée.</p></div>
- <button class="ghost" id="back">← Changer de modèle</button>
+ <div class="acts">
+ <button class="ghost" id="back">← Modèles</button>
  <button class="ghost" id="prt">Imprimer</button>
  <button class="primary" id="pdf">Télécharger en PDF</button>
+ </div>
 </header>
+<div class="tabs" id="tabs"><button data-v="form" aria-pressed="true">Formulaire</button><button data-v="prev" aria-pressed="false">Aperçu</button></div>
 <main>
  <div id="form">
   <div class="panel">
@@ -229,7 +257,7 @@ main{display:block;padding:0}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (function(){
-var KEY='cv-builder-v1';
+var KEY='cv-builder-v2';
 var TPLS=[['classique','Classique','Sobre, une colonne'],['moderne','Moderne','Barre latérale'],['bandeau','Bandeau','En-tête marqué'],['cadres','Cadres','Open source, en blocs'],['portfolio','Portfolio','Open source, titres larges']];
 var T={
 m1:{n:'Ardoise',d:'Colonne grise, photo ronde',a:'#9a9a9a',L:'l',sw:250,h:'band',hb:'w',hc:1,ph:'side',ps:'c',S:'plki',M:'ef',hs:'l'},
@@ -253,13 +281,13 @@ m18:{n:'Violet',d:'Bande lavande',a:'#5b3f9a',sc:'#ddd7ec',L:'l',sw:210,sb:'t',h
 m19:{n:'Orange',d:'Gros titre, pastilles',a:'#e8844a',sc:'#f9d2b6',L:'r',sw:240,h:'band',hb:'t',hc:1,ph:'head',ps:'s',S:'lfk',M:'pe',hs:'p',k:'d'}
 };
 TPLS=Object.keys(T).map(function(k){return[k,T[k].n,T[k].d]}).concat(TPLS);
-function listL(s){return String(s||'').split(',').map(function(x){return x.trim()}).filter(Boolean)}
+function listL(s){s=String(s||'');var g=s.charAt(0)===M;return s.replace(M,'').split(',').map(function(x){return(g?M:'')+x.trim()}).filter(function(x){return x.replace(M,'')})}
 function skillH(a,m){return a.map(function(x){var q=String(x).split(':'),n=esc(q[0].trim()),v=Math.min(5,Math.max(1,+q[1]||3));
  if(m==='b')return'<div class="sk">'+n+'<i class="bar"><b style="width:'+v*20+'%"></b></i></div>';
  if(m==='d')return'<div class="sk">'+n+'<i class="dots">'+[1,2,3,4,5].map(function(i){return'<u'+(i<=v?' class="on"':'')+'></u>'}).join('')+'</i></div>';
  return'<div>'+n+'</div>'}).join('')}
 function gen(t){
- var g=T[t],d=S.d,sk=listL(d.skills),lg=listL(d.langs),it=list(d.ints);
+ var g=T[t],d=CUR.d,sk=listL(d.skills),lg=listL(d.langs),it=list(d.ints);
  var ct=contacts().map(function(x){return'<div>'+x+'</div>'}).join('');
  var P=g.ph?'<div class="ph p'+(g.ps||'c')+'">'+(S.photo?'<img alt="" src="'+S.photo+'">':'')+'</div>':'';
  var X={c:['Contact',ct],p:['Profil',d.summary?'<div>'+esc(d.summary)+'</div>':''],e:['Expériences',expH()],f:['Formation',eduH()],k:['Compétences',skillH(sk,g.k)],l:['Langues',skillH(lg,(g.k==='b'||g.k==='d')?g.k:'')],i:['Centres d’intérêt',it.length?'<div>'+it.map(esc).join(', ')+'</div>':'']};
@@ -271,28 +299,38 @@ function gen(t){
 }
 function tint(h,t){var n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;function m(c){return Math.round(c+(255-c)*(1-t))}return'rgb('+m(r)+','+m(g)+','+m(b)+')'}
 var tt;function thumbsLater(){clearTimeout(tt);tt=setTimeout(thumbs,250)}
-var blank=function(){return{tpl:'classique',accent:'#0f5c55',d:{name:'Camille Moreau',title:'Chargée de communication',email:'camille.moreau@exemple.fr',phone:'06 12 34 56 78',city:'Libreville',summary:'Cinq ans d’expérience en communication digitale. J’aime transformer des idées complexes en messages simples.',skills:'Rédaction:5, Réseaux sociaux:4, Canva:4, Gestion de projet:3',langs:'Français:5, Anglais:4',ints:'Lecture, Randonnée, Photographie'},
+var SAMPLE={d:{name:'Camille Moreau',title:'Chargée de communication',email:'camille.moreau@exemple.fr',phone:'06 12 34 56 78',city:'Libreville',summary:'Cinq ans d’expérience en communication digitale. J’aime transformer des idées complexes en messages simples.',skills:'Rédaction:5, Réseaux sociaux:4, Canva:4, Gestion de projet:3',langs:'Français:5, Anglais:4',ints:'Lecture, Randonnée, Photographie'},
 exp:[{role:'Chargée de communication',company:'Agence Horizon',period:'2021 – aujourd’hui',desc:'Gestion de 12 comptes clients\nHausse de 40 % de l’audience en un an'}],
-edu:[{degree:'Master Communication',school:'Université Omar Bongo',period:'2018 – 2020'}]}};
+edu:[{degree:'Master Communication',school:'Université Omar Bongo',period:'2018 – 2020'}]};
+var SA={d:SAMPLE.d,exp:SAMPLE.exp,edu:SAMPLE.edu};
+var blank=function(){return{tpl:'classique',accent:'#0f5c55',d:{name:'',title:'',email:'',phone:'',city:'',summary:'',skills:'',langs:'',ints:''},exp:[{role:'',company:'',period:'',desc:''}],edu:[{degree:'',school:'',period:''}]}};
+var GHOST=true,CUR=null,M='\u0001';
+function eff(){
+ var u=S.d,d={};
+ Object.keys(SAMPLE.d).forEach(function(k){d[k]=u[k]||(GHOST?M+SAMPLE.d[k]:'')});
+ function rows(a,sm,ks){return a.map(function(e,i){var q=sm[Math.min(i,sm.length-1)],o={};ks.forEach(function(k){o[k]=e[k]||(GHOST?M+q[k]:'')});return o})}
+ return{d:d,exp:rows(S.exp,SAMPLE.exp,['role','company','period','desc']),edu:rows(S.edu,SAMPLE.edu,['degree','school','period'])};
+}
 var S=blank(),saved=false;
 try{var raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);saved=true}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function list(s){return String(s||'').split(',').map(function(x){return x.trim().replace(/:\s*[1-5]$/,'')}).filter(Boolean)}
-function bullets(t){var l=String(t||'').split('\n').map(function(x){return x.trim()}).filter(Boolean);return l.length?'<ul>'+l.map(function(x){return'<li>'+esc(x)+'</li>'}).join('')+'</ul>':''}
-function expH(){return S.exp.map(function(e){return'<div class="e"><b>'+esc(e.role)+'</b>'+(e.company?' — '+esc(e.company):'')+'<div class="m">'+esc(e.period)+'</div>'+bullets(e.desc)+'</div>'}).join('')}
-function eduH(){return S.edu.map(function(e){return'<div class="e"><b>'+esc(e.degree)+'</b><div class="m">'+esc(e.school)+(e.period?' · '+esc(e.period):'')+'</div></div>'}).join('')}
+function esc(s){s=String(s||'');var g=s.charAt(0)===M;if(g)s=s.slice(1);s=s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]});return g?'<span class="gx">'+s+'</span>':s}
+function list(s){return listL(s).map(function(x){return x.replace(/:\s*[1-5]$/,'')})}
+function bullets(t){t=String(t||'');var g=t.charAt(0)===M,l=t.replace(M,'').split('\n').map(function(x){return x.trim()}).filter(Boolean);return l.length?'<ul>'+l.map(function(x){return'<li>'+esc((g?M:'')+x)+'</li>'}).join('')+'</ul>':''}
+function expH(){return CUR.exp.map(function(e){return'<div class="e"><b>'+esc(e.role)+'</b>'+(e.company?' — '+esc(e.company):'')+'<div class="m">'+esc(e.period)+'</div>'+bullets(e.desc)+'</div>'}).join('')}
+function eduH(){return CUR.edu.map(function(e){return'<div class="e"><b>'+esc(e.degree)+'</b><div class="m">'+esc(e.school)+(e.period?' · '+esc(e.period):'')+'</div></div>'}).join('')}
 function sec(t,h){return h?'<div class="sec"><h3>'+t+'</h3>'+h+'</div>':''}
 function box(t,h){return h?'<div class="box"><h3>'+t+'</h3>'+h+'</div>':''}
 function chips(a){return a.length?'<div class="chips">'+a.map(function(x){return'<span>'+esc(x)+'</span>'}).join('')+'</div>':''}
 function rowE(l,p){return'<div class="r"><div>'+l+'</div><div class="p">'+esc(p)+'</div></div>'}
-function expP(){return S.exp.map(function(e){return rowE('<b>'+esc(e.role)+'</b><div class="m">'+esc(e.company)+'</div>'+bullets(e.desc),e.period)}).join('')}
-function eduP(){return S.edu.map(function(e){return rowE('<b>'+esc(e.degree)+'</b><div class="m">'+esc(e.school)+'</div>',e.period)}).join('')}
-function nameP(n){var p=String(n||'').trim().split(/\s+/);var l=p.length>1?p.pop():'';return esc(p.join(' '))+(l?' <span>'+esc(l)+'</span>':'')}
-function contacts(){var d=S.d;return[d.email,d.phone,d.city].filter(Boolean).map(esc)}
-function build(tpl){
+function expP(){return CUR.exp.map(function(e){return rowE('<b>'+esc(e.role)+'</b><div class="m">'+esc(e.company)+'</div>'+bullets(e.desc),e.period)}).join('')}
+function eduP(){return CUR.edu.map(function(e){return rowE('<b>'+esc(e.degree)+'</b><div class="m">'+esc(e.school)+'</div>',e.period)}).join('')}
+function nameP(n){n=String(n||'');var g=n.charAt(0)===M;var p=n.replace(M,'').trim().split(/\s+/);var l=p.length>1?p.pop():'';var r=esc(p.join(' '))+(l?' <span>'+esc(l)+'</span>':'');return g?'<span class="gx">'+r+'</span>':r}
+function contacts(){var d=CUR.d;return[d.email,d.phone,d.city].filter(Boolean).map(esc)}
+function build(tpl,src){
+ CUR=src||eff();
  if(T[tpl])return gen(tpl);
- var d=S.d;
+ var d=CUR.d;
  var sum=d.summary?sec('Profil','<div>'+esc(d.summary)+'</div>'):'';
  var sk=list(d.skills),lg=list(d.langs),h='';
  if(tpl==='classique'){
@@ -316,7 +354,7 @@ function render(){
 function thumbs(){
  document.querySelectorAll('.th').forEach(function(w){
   var t=w.dataset.th,el=w.firstChild,sc=w.clientWidth/794;
-  el.className='thi cvx t-'+t+(T[t]?' g':'');el.style.setProperty('--a',(T[t]&&t!==S.tpl)?T[t].a:S.accent);el.innerHTML=build(t);
+  el.className='thi cvx t-'+t+(T[t]?' g':'');el.style.setProperty('--a',(T[t]&&t!==S.tpl)?T[t].a:S.accent);el.innerHTML=build(t,SA);
   el.style.transform='scale('+sc+')';w.style.height=(1123*sc)+'px';
  });
 }
@@ -335,15 +373,15 @@ function fit(){
  cv.style.setProperty('--pages',pages);LAY={pages:pages,ph:PH};
  for(var j=1;j<pages;j++){var d=document.createElement('div');d.className='pb';d.style.top=(j*PH)+'px';cv.appendChild(d)}
  document.getElementById('pgs').textContent=pages>1?'@page{size:A4;margin:12mm 0}':'';
- cv.style.zoom=Math.min(1,(box.clientWidth-28)/794);
+ cv.style.zoom=Math.min(1,(box.clientWidth-2*parseFloat(getComputedStyle(box).paddingLeft))/794);
  var pt=(Math.round(13*k*0.75*10)/10).toString().replace('.',',');
  document.getElementById('stat').textContent='Police : '+pt+' pt, '+pages+' page'+(pages>1?'s (police minimale de 8 pt atteinte)':'');
 }
 function itemHtml(kind,i,o){
  var f=kind==='exp'?[['role','Poste'],['company','Entreprise'],['period','Période']]:[['degree','Diplôme'],['school','Établissement'],['period','Période']];
- var s='<div class="item">';
- f.forEach(function(x){s+='<label>'+x[1]+'<input type="text" data-l="'+kind+'" data-i="'+i+'" data-f="'+x[0]+'" value="'+esc(o[x[0]])+'"></label>'});
- if(kind==='exp')s+='<label>Missions (une par ligne)<textarea data-l="exp" data-i="'+i+'" data-f="desc">'+esc(o.desc)+'</textarea></label>';
+ var s='<div class="item">',sp=kind==='exp'?SAMPLE.exp:SAMPLE.edu;sp=sp[Math.min(i,sp.length-1)];
+ f.forEach(function(x){s+='<label>'+x[1]+'<input type="text" data-l="'+kind+'" data-i="'+i+'" data-f="'+x[0]+'" value="'+esc(o[x[0]])+'" placeholder="'+esc(sp[x[0]])+'"></label>'});
+ if(kind==='exp')s+='<label>Missions (une par ligne)<textarea data-l="exp" data-i="'+i+'" data-f="desc" placeholder="'+esc(sp.desc)+'">'+esc(o.desc)+'</textarea></label>';
  return s+'<button class="ghost" data-del="'+kind+'" data-i="'+i+'">Supprimer</button></div>';
 }
 function lists(){
@@ -351,7 +389,7 @@ function lists(){
  document.getElementById('edu').innerHTML=S.edu.map(function(o,i){return itemHtml('edu',i,o)}).join('');
 }
 function fill(){
- document.querySelectorAll('[data-k]').forEach(function(el){el.value=S.d[el.dataset.k]||''});
+ document.querySelectorAll('[data-k]').forEach(function(el){el.value=S.d[el.dataset.k]||'';el.placeholder=SAMPLE.d[el.dataset.k]||''});
  document.getElementById('accent').value=S.accent;lists();tplBtns();
 }
 function tplBtns(){
@@ -365,7 +403,7 @@ document.addEventListener('input',function(e){
  else if(el.dataset.l){S[el.dataset.l][+el.dataset.i][el.dataset.f]=el.value}
  else if(el.id==='accent'){S.accent=el.value}
  else return;
- save();render();
+ GHOST=true;save();render();
 });
 document.addEventListener('click',function(e){
  var b=e.target.closest('button');if(!b)return;
@@ -375,8 +413,9 @@ document.addEventListener('click',function(e){
  else if(b.id==='addEdu'){S.edu.push({degree:'',school:'',period:''});lists();save();render()}
  else if(b.id==='reset'){if(confirm('Effacer toutes vos informations ?')){var t=S.tpl,a=S.accent;S={tpl:t,accent:a,d:{name:'',title:'',email:'',phone:'',city:'',summary:'',skills:'',langs:'',ints:''},exp:[{role:'',company:'',period:'',desc:''}],edu:[{degree:'',school:'',period:''}]};fill();save();render()}}
  else if(b.id==='pdf'){dl(b)}
- else if(b.id==='prt'){window.print()}
+ else if(b.id==='prt'){GHOST=false;render();window.print()}
  else if(b.id==='back'){show('home')}
+ else if(b.dataset.v){document.getElementById('app').className='v-'+b.dataset.v;document.querySelectorAll('#tabs button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});if(b.dataset.v==='prev')fit();window.scrollTo(0,0)}
  else if(b.id==='resumeBtn'){show('app')}
  else if(b.id==='rmph'){S.photo='';document.getElementById('photo').value='';save();render()}
 });
@@ -388,6 +427,7 @@ document.addEventListener('change',function(e){
   S.photo=c.toDataURL('image/jpeg',.85);save();render()};im.src=r.result};r.readAsDataURL(f);
 });
 window.addEventListener('resize',fit);
+window.addEventListener('afterprint',function(){GHOST=true;if(!document.getElementById('app').hidden)render()});
 async function makePdf(){
  var cv=document.getElementById('cv'),w=document.createElement('div'),c2=cv.cloneNode(true),cnv,st=[0],multi=LAY.pages>1,H=multi?LAY.ph:1123;
  w.style.cssText='position:fixed;left:-10000px;top:0;width:794px';
@@ -415,7 +455,7 @@ async function makePdf(){
 }
 async function dl(btn){
  var st=document.getElementById('stat'),t=btn.textContent;
- btn.disabled=true;btn.textContent='Création du PDF…';
+ btn.disabled=true;btn.textContent='Création du PDF…';GHOST=false;render();
  try{
   if(!window.html2canvas||!window.jspdf)throw{code:'lib'};
   var blob=await makePdf(),f='CV-'+((S.d.name||'').trim().replace(/\s+/g,'-').replace(/[^\w\u00C0-\u00FF-]/g,'')||'mon-cv')+'.pdf';
@@ -425,13 +465,13 @@ async function dl(btn){
  }catch(e){
   if(!e||e.code!=='declined')st.textContent='Le téléchargement direct a échoué. Utilisez « Imprimer » puis « Enregistrer au format PDF ».';
  }
- btn.disabled=false;btn.textContent=t;
+ GHOST=true;render();btn.disabled=false;btn.textContent=t;
 }
 function show(v){
  document.getElementById('home').hidden=v!=='home';document.getElementById('app').hidden=v!=='app';
  window.scrollTo(0,0);
  if(v==='home'){tplBtns()}
- else{var m=TPLS.filter(function(t){return t[0]===S.tpl})[0];fill();document.getElementById('tname').textContent=m?m[1]:'';render()}
+ else{document.getElementById('app').className='v-form';document.querySelectorAll('#tabs button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.v==='form')});var m=TPLS.filter(function(t){return t[0]===S.tpl})[0];fill();document.getElementById('tname').textContent=m?m[1]:'';render()}
 }
 if(saved)document.getElementById('resume').innerHTML='<button class="primary" id="resumeBtn">Reprendre mon dernier CV</button>';
 fill();show('home');
